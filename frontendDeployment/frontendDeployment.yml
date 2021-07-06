@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deploy
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: frontend
+          image: nginx
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: chatapp
+              mountPath: /etc/nginx/conf.d/
+              readOnly: true
+      volumes:
+        - name: chatapp
+          configMap:
+            name: chatapp-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: nginx
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatapp-conf
+data:
+  nginxconf.conf: |
+                  server{
+                  listen 80;
+                  location / {
+                  proxy_pass http://backend-service:8000;
+                   }
+                  }
